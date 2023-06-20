@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shopping_app/data/dummy_category.dart';
 import 'package:shopping_app/model/category.dart';
 import 'package:shopping_app/model/grocery.dart';
@@ -19,6 +22,24 @@ class _NewListItemState extends State<NewListItem> {
   void _saveItem() {
     if (_formatKey.currentState!.validate()) {
       _formatKey.currentState!.save();
+
+      final url = Uri.https('fir-todo-app-38da2-default-rtdb.firebaseio.com',
+          'shopping-list.json');
+      http.post(
+        url,
+        headers: {
+          'Content-Type': 'applications/json',
+        },
+        body: {
+          json.encode(
+            {
+              'name': _enterName,
+              'quantity': _enteredQuantity,
+              'category': _selectedCategory?.title
+            },
+          ),
+        },
+      );
       Navigator.of(context).pop(
         GroceryItem(
             id: DateTime.now().toString(),
