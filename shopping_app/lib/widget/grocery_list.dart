@@ -16,6 +16,12 @@ class GroceryList extends StatefulWidget {
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItem = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
   void _loadData() async {
     final url = Uri.https(
         'fir-todo-app-38da2-default-rtdb.firebaseio.com', 'shopping-list.json');
@@ -42,12 +48,18 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _addItem() async {
-    await Navigator.of(context).push<GroceryItem>(
+    final newItem = await Navigator.of(context).push<GroceryItem>(
       MaterialPageRoute(
         builder: (context) => const NewListItem(),
       ),
     );
-    _loadData();
+    if (newItem == null) {
+      return;
+    }
+    setState(() {
+      _groceryItem.add(newItem);
+    });
+    //_loadData();
   }
 
   void _removeItem(GroceryItem item) {
