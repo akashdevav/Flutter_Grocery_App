@@ -15,6 +15,8 @@ class GroceryList extends StatefulWidget {
 
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItem = [];
+  var _isLoading = true;
+  String? error;
 
   @override
   void initState() {
@@ -26,12 +28,17 @@ class _GroceryListState extends State<GroceryList> {
     final url = Uri.https(
         'fir-todo-app-38da2-default-rtdb.firebaseio.com', 'shopping-list.json');
     final response = await http.get(url);
+
+    if (response.statusCode >= 400) {
+      error = 'Failed to fetch data, Try again later.';
+    }
+
     final Map<String, dynamic> listData = json.decode(response.body);
     final List<GroceryItem> loadItem = [];
     for (final item in listData.entries) {
       final category = categories.entries
           .firstWhere(
-              (catItem) => catItem.value.title == item.value['category'])
+              (catItem) => catItem.value.title == item.value["category"])
           .value;
       loadItem.add(
         GroceryItem(
@@ -43,6 +50,7 @@ class _GroceryListState extends State<GroceryList> {
     }
     setState(() {
       _groceryItem = loadItem;
+      _isLoading = false;
     });
     print(response.body);
   }
@@ -62,10 +70,20 @@ class _GroceryListState extends State<GroceryList> {
     //_loadData();
   }
 
-  void _removeItem(GroceryItem item) {
+  void _removeItem(GroceryItem item) async {
+    final index = _groceryItem.indexOf(item);
     setState(() {
       _groceryItem.remove(item);
     });
+    final url = Uri.https('fir-todo-app-38da2-default-rtdb.firebaseio.com',
+        'shopping-list/${item.id}.json');
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceryItem.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -73,6 +91,12 @@ class _GroceryListState extends State<GroceryList> {
     Widget content = const Center(
       child: Text('No Items added yet'),
     );
+
+    if (_isLoading) {
+      content = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     if (_groceryItem.isNotEmpty) {
       content = ListView.builder(
         itemCount: _groceryItem.length,
@@ -99,6 +123,12 @@ class _GroceryListState extends State<GroceryList> {
                 ),
               ),
             )),
+      );
+    }
+
+    if (error != null) {
+      content = Center(
+        child: Text(error!),
       );
     }
     return Scaffold(
